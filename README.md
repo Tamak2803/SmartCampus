@@ -196,5 +196,3 @@ docker compose down
 *   **Reporting / Analytics Service**: Developed the CQRS read-model aggregator that compiles registration statistics asynchronously.
 *   **RabbitMQ Message Broker**: Configured the Topic Exchange, queues, routing keys, and JSON serialization format.
 *   **Postman Collection**: Created and exported the JSON test collection (`SmartCampus_Connect.postman_collection.json`).
-```
-```
