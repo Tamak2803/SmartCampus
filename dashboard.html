@@ -1,0 +1,496 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>SmartCampus Connect 100% Complete Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-gray-100 font-sans p-6">
+    <div class="max-w-6xl mx-auto">
+      <!-- Header -->
+      <header
+        class="mb-8 flex justify-between items-center bg-blue-900 text-white p-6 rounded-lg shadow-md"
+      >
+        <div>
+          <h1 class="text-3xl font-bold">SmartCampus Connect</h1>
+          <p class="text-sm opacity-80">
+            100% Unified Management Console (All Weeks 1-7 Services Linked)
+          </p>
+        </div>
+        <button
+          onclick="refreshData()"
+          class="bg-blue-600 hover:bg-blue-500 text-white font-bold py-2 px-4 rounded transition"
+        >
+          Refresh Data
+        </button>
+      </header>
+
+      <!-- Grid Layout -->
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
+        <!-- Column 1: Core REST Operations -->
+        <div class="space-y-8">
+          <!-- Create Student Form (REST) -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">
+              1. Create Student (Student Profile REST - Port 8081)
+            </h2>
+            <form id="studentForm" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-700"
+                    >Student ID</label
+                  >
+                  <input
+                    type="text"
+                    id="studentId"
+                    value="STU1001"
+                    class="mt-1 block w-full p-2 border rounded-md"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700"
+                    >Full Name</label
+                  >
+                  <input
+                    type="text"
+                    id="studentName"
+                    value="Alice Dev"
+                    class="mt-1 block w-full p-2 border rounded-md"
+                    required
+                  />
+                </div>
+              </div>
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-700"
+                    >Programme</label
+                  >
+                  <input
+                    type="text"
+                    id="studentProgramme"
+                    value="Computer Science"
+                    class="mt-1 block w-full p-2 border rounded-md"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700"
+                    >GPA</label
+                  >
+                  <input
+                    type="number"
+                    step="0.1"
+                    id="studentGpa"
+                    value="3.8"
+                    class="mt-1 block w-full p-2 border rounded-md"
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onclick="createStudent()"
+                class="w-full bg-green-600 text-white p-2 rounded-md hover:bg-green-500 font-bold text-sm"
+              >
+                Create Profile
+              </button>
+            </form>
+          </div>
+
+          <!-- Enrol Student Form (REST Orchestrated) -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2 class="text-xl font-bold mb-4 text-gray-800">
+              2. Enrol Student (Course Enrolment - Port 8082)
+            </h2>
+            <form id="enrolForm" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-700"
+                    >Student ID</label
+                  >
+                  <input
+                    type="text"
+                    id="enrolStudentId"
+                    value="STU1001"
+                    class="mt-1 block w-full p-2 border rounded-md"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700"
+                    >Course Code</label
+                  >
+                  <input
+                    type="text"
+                    id="enrolCourseCode"
+                    value="CS101"
+                    class="mt-1 block w-full p-2 border rounded-md"
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onclick="enrolStudent()"
+                class="w-full bg-blue-600 text-white p-2 rounded-md hover:bg-blue-500 font-bold text-sm"
+              >
+                Submit Enrolment
+              </button>
+            </form>
+          </div>
+
+          <!-- SOAP Library Booking Form (Legacy - Port 8083) -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2
+              class="text-xl font-bold mb-4 text-gray-800 flex justify-between"
+            >
+              <span>3. Book Library Loan</span>
+              <span class="text-xs text-purple-600 font-bold"
+                >SOAP Service (Port 8083)</span
+              >
+            </h2>
+            <form id="soapForm" class="space-y-4">
+              <div class="grid grid-cols-2 gap-4">
+                <div>
+                  <label class="block text-xs font-medium text-gray-700"
+                    >Student ID (Send 'FAIL' for Fault)</label
+                  >
+                  <input
+                    type="text"
+                    id="soapStudentId"
+                    value="STU1001"
+                    class="mt-1 block w-full p-2 border rounded-md"
+                    required
+                  />
+                </div>
+                <div>
+                  <label class="block text-xs font-medium text-gray-700"
+                    >Book ID</label
+                  >
+                  <input
+                    type="text"
+                    id="soapBookId"
+                    value="BOOK-999"
+                    class="mt-1 block w-full p-2 border rounded-md"
+                    required
+                  />
+                </div>
+              </div>
+              <button
+                type="button"
+                onclick="submitSoapLoan()"
+                class="w-full bg-purple-700 text-white p-2 rounded-md hover:bg-purple-600 font-bold text-sm"
+              >
+                Submit XML SOAP Request
+              </button>
+            </form>
+            <!-- SOAP response logging box -->
+            <div
+              id="soapResponseBox"
+              class="mt-4 p-3 bg-gray-50 border rounded-md text-xs font-mono hidden"
+            >
+              <!-- Filled dynamically -->
+            </div>
+          </div>
+        </div>
+
+        <!-- Column 2: Live Views & Async Alerts -->
+        <div class="space-y-8">
+          <!-- Live System alerts (Notification - Port 8084) -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2
+              class="text-xl font-bold mb-4 text-gray-800 flex justify-between"
+            >
+              <span>Live Alerts (Consuming AMQP Broker)</span>
+              <span class="text-xs text-red-600 font-bold"
+                >Notification (Port 8084)</span
+              >
+            </h2>
+            <div
+              id="alertsContainer"
+              class="space-y-2 max-h-48 overflow-y-auto"
+            >
+              <p class="text-xs text-gray-400 italic">
+                No events generated yet. Complete an enrolment to trigger
+                alerts.
+              </p>
+            </div>
+          </div>
+
+          <!-- Live Analytics View (CQRS stats - Port 8085) -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2
+              class="text-xl font-bold mb-4 text-gray-800 flex justify-between"
+            >
+              <span>Course Registrations Stats</span>
+              <span class="text-xs text-green-600 font-bold"
+                >Analytics (Port 8085)</span
+              >
+            </h2>
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    Course Code
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    Registrations
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                id="analyticsTable"
+                class="bg-white divide-y divide-gray-200 text-sm"
+              >
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Student List View (Student - Port 8081) -->
+          <div class="bg-white p-6 rounded-lg shadow-md">
+            <h2
+              class="text-xl font-bold mb-4 text-gray-800 flex justify-between"
+            >
+              <span>Active Student Profiles</span>
+              <span class="text-xs text-blue-600 font-bold"
+                >Student DB (Port 8081)</span
+              >
+            </h2>
+            <table class="min-w-full divide-y divide-gray-200">
+              <thead class="bg-gray-50">
+                <tr>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    ID
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    Name
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    Programme
+                  </th>
+                  <th
+                    class="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase"
+                  >
+                    GPA
+                  </th>
+                </tr>
+              </thead>
+              <tbody
+                id="studentsTable"
+                class="bg-white divide-y divide-gray-200 text-xs"
+              >
+                <!-- Populated dynamically -->
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- JavaScript REST & SOAP Engine -->
+    <script>
+      const STUDENT_API = "http://localhost:8081/api/students";
+      const ENROLMENT_API = "http://localhost:8082/api/enrolments";
+      const SOAP_API = "http://localhost:8083/ws";
+      const NOTIFICATION_API = "http://localhost:8084/api/notifications";
+      const ANALYTICS_API =
+        "http://localhost:8085/api/analytics/registrations-by-course";
+
+      window.onload = function () {
+        refreshData();
+        // Poll for notifications every 2 seconds (R6 display)
+        setInterval(fetchNotifications, 2000);
+      };
+
+      function refreshData() {
+        fetchStudents();
+        fetchAnalytics();
+        fetchNotifications();
+      }
+
+      async function fetchStudents() {
+        try {
+          const res = await fetch(STUDENT_API);
+          if (res.ok) {
+            const students = await res.json();
+            const tbody = document.getElementById("studentsTable");
+            tbody.innerHTML = "";
+            students.forEach((s) => {
+              tbody.innerHTML += `
+                            <tr>
+                                <td class="px-4 py-2 font-medium text-gray-900">${s.id}</td>
+                                <td class="px-4 py-2 text-gray-500">${s.name}</td>
+                                <td class="px-4 py-2 text-gray-500">${s.programme}</td>
+                                <td class="px-4 py-2 text-gray-500">${s.gpa}</td>
+                            </tr>
+                        `;
+            });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function fetchAnalytics() {
+        try {
+          const res = await fetch(ANALYTICS_API);
+          if (res.ok) {
+            const stats = await res.json();
+            const tbody = document.getElementById("analyticsTable");
+            tbody.innerHTML = "";
+            stats.forEach((item) => {
+              tbody.innerHTML += `
+                            <tr>
+                                <td class="px-4 py-2 font-bold text-gray-900">${item.courseCode}</td>
+                                <td class="px-4 py-2 text-green-600 font-bold">${item.totalRegistrations}</td>
+                            </tr>
+                        `;
+            });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      // Live alert polling
+      async function fetchNotifications() {
+        try {
+          const res = await fetch(NOTIFICATION_API);
+          if (res.ok) {
+            const alerts = await res.json();
+            const container = document.getElementById("alertsContainer");
+            if (alerts.length === 0) return;
+            container.innerHTML = "";
+            alerts.forEach((alertStr) => {
+              const evt = JSON.parse(alertStr);
+              container.innerHTML += `
+                            <div class="p-2 bg-red-50 border-l-4 border-red-500 text-xs text-red-800 rounded">
+                                <span class="font-bold">[${evt.eventType}]</span> Student ${evt.payload.studentId} registered in ${evt.payload.courseCode}
+                            </div>
+                        `;
+            });
+          }
+        } catch (e) {
+          console.error(e);
+        }
+      }
+
+      async function createStudent() {
+        const id = document.getElementById("studentId").value;
+        const name = document.getElementById("studentName").value;
+        const programme = document.getElementById("studentProgramme").value;
+        const gpa = parseFloat(document.getElementById("studentGpa").value);
+
+        try {
+          const res = await fetch(STUDENT_API, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ id, name, programme, gpa }),
+          });
+          if (res.ok) {
+            alert("Student profile created.");
+            refreshData();
+          } else {
+            alert("Failed to create profile.");
+          }
+        } catch (e) {
+          alert("Student Service connection error.");
+        }
+      }
+
+      async function enrolStudent() {
+        const studentId = document.getElementById("enrolStudentId").value;
+        const courseCode = document.getElementById("enrolCourseCode").value;
+
+        try {
+          const url = `${ENROLMENT_API}?studentId=${encodeURIComponent(studentId)}&courseCode=${encodeURIComponent(courseCode)}`;
+          const res = await fetch(url, { method: "POST" });
+          const msg = await res.text();
+          alert(msg);
+          refreshData();
+        } catch (e) {
+          alert("Enrolment Service connection error.");
+        }
+      }
+
+      // SOAP Executor (R8)
+      async function submitSoapLoan() {
+        const studentId = document.getElementById("soapStudentId").value;
+        const bookId = document.getElementById("soapBookId").value;
+
+        // Raw SOAP/XML envelope body
+        const soapXml = `
+                <soapenv:Envelope xmlns:soapenv="http://schemas.xmlsoap.org/soap/envelope/" xmlns:lib="http://smartcampus.com/library">
+                   <soapenv:Header/>
+                   <soapenv:Body>
+                      <lib:BookLoanRequest>
+                         <lib:studentId>${studentId}</lib:studentId>
+                         <lib:bookId>${bookId}</lib:bookId>
+                      </lib:BookLoanRequest>
+                   </soapenv:Body>
+                </soapenv:Envelope>
+            `.trim();
+
+        const responseBox = document.getElementById("soapResponseBox");
+        responseBox.classList.remove("hidden");
+        responseBox.innerHTML =
+          "<span class='text-gray-500'>Sending SOAP request...</span>";
+
+        try {
+          const res = await fetch(SOAP_API, {
+            method: "POST",
+            headers: { "Content-Type": "text/xml" },
+            body: soapXml,
+          });
+          const xmlText = await res.text();
+
+          // XML DOM parsing logic (extract SOAP XML elements)
+          const parser = new DOMParser();
+          const xmlDoc = parser.parseFromString(xmlText, "text/xml");
+
+          if (res.status === 200) {
+            const loanId =
+              xmlDoc.getElementsByTagName("ns2:loanId")[0]?.textContent ||
+              "N/A";
+            const status =
+              xmlDoc.getElementsByTagName("ns2:status")[0]?.textContent ||
+              "N/A";
+            const dueDate =
+              xmlDoc.getElementsByTagName("ns2:dueDate")[0]?.textContent ||
+              "N/A";
+
+            responseBox.innerHTML = `
+                        <div class="text-green-600 font-bold">SOAP Response (HTTP 200)</div>
+                        <div><strong>Loan ID:</strong> ${loanId}</div>
+                        <div><strong>Status:</strong> ${status}</div>
+                        <div><strong>Due Date:</strong> ${dueDate}</div>
+                    `;
+          } else {
+            const faultString =
+              xmlDoc.getElementsByTagName("faultstring")[0]?.textContent ||
+              "Unknown fault occurred.";
+            responseBox.innerHTML = `
+                        <div class="text-red-600 font-bold">SOAP Fault (HTTP ${res.status})</div>
+                        <div class="text-red-500 font-semibold">${faultString}</div>
+                    `;
+          }
+        } catch (e) {
+          responseBox.innerHTML = `<span class='text-red-600'>SOAP service connection error.</span>`;
+        }
+      }
+    </script>
+  </body>
+</html>

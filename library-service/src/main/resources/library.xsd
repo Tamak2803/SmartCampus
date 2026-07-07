@@ -1,0 +1,22 @@
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema"
+    xmlns:tns="http://smartcampus.com/library" targetNamespace="http://smartcampus.com/library" elementFormDefault="qualified">
+
+    <xs:element name="BookLoanRequest">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="studentId" type="xs:string"/>
+                <xs:element name="bookId" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+
+    <xs:element name="BookLoanResponse">
+        <xs:complexType>
+            <xs:sequence>
+                <xs:element name="loanId" type="xs:string"/>
+                <xs:element name="status" type="xs:string"/>
+                <xs:element name="dueDate" type="xs:string"/>
+            </xs:sequence>
+        </xs:complexType>
+    </xs:element>
+</xs:schema>
