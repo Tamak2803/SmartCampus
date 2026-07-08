@@ -3,7 +3,7 @@
 ```markdown
 # SmartCampus Connect
 
-https://youtu.be/z9me8u2aZok
+Demo link : https://youtu.be/z9me8u2aZok
 
 SmartCampus Connect is a decentralized, microservices-based backend platform designed to deliver core campus services to a university environment. The application brings together distributed system design methodologies introduced in Weeks 1 through 7: strict database-per-service isolation, synchronous RESTful orchestration, asynchronous AMQP choreography, multi-threaded concurrency locking, legacy SOAP interoperability, and circuit-breaker failure tolerance.
 
