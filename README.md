@@ -1,11 +1,11 @@
+Here is your complete, updated **`README.md`** file containing the detailed project overview, functional module descriptions, and the step-by-step dependencies setup guide:
+
+---
 
 
-```markdown
 # SmartCampus Connect
-
 Demo link : https://youtu.be/z9me8u2aZok
-
-SmartCampus Connect is a decentralized, microservices-based backend platform designed to deliver core campus services to a university environment. The application brings together distributed system design methodologies introduced in Weeks 1 through 7: strict database-per-service isolation, synchronous RESTful orchestration, asynchronous AMQP choreography, multi-threaded concurrency locking, legacy SOAP interoperability, and circuit-breaker failure tolerance.
+SmartCampus Connect is a decentralized, microservices-based backend platform designed to deliver core campus services to a university environment. The application brings together distributed system design methodologies: strict database-per-service isolation, synchronous RESTful orchestration, asynchronous AMQP choreography, multi-threaded concurrency locking, legacy SOAP interoperability, and circuit-breaker failure tolerance.
 
 ---
 
@@ -55,14 +55,28 @@ The platform exposes five primary modules, each designed as a self-contained mic
     *   **Structured Exception Faults**: Validates incoming XML payloads and intercepts invalid inputs to generate structured `<soapenv:Fault>` exceptions returned under an HTTP 500 status code.
 
 ### 2.5 Reporting / Analytics Service (Port 8085)
-*   **Purpose**: Compiles aggregate real-time statistical reports (e.g., student enrolment metrics per academic course) for administrative consoles.
+*   **Purpose**: Compiles aggregate real-time statistical reports (e.g., student enrolment registration counts per academic course) for administrative consoles.
 *   **Key Functions**:
     *   **CQRS Pattern**: To prevent slow, cross-database SQL join queries that degrade database read performance, this service subscribes independently to the registration events.
     *   **Data Aggregation**: Parses JSON events from RabbitMQ and increments registration counters in its own isolated database (`analytics_db`), enabling immediate, high-performance report delivery via a REST endpoint.
 
 ---
 
-## 3. System Architecture Topology
+## 3. Port Allocation & Endpoint Registry
+
+Each service is compiled independently, runs in an isolated JVM, and maintains its own in-memory database to satisfy the **Database-per-Service (R3)** architectural constraint.
+
+| Service Name | Port | Protocols | Database | Core Responsibilities |
+| :--- | :--- | :--- | :--- | :--- |
+| **Student Profile Service** | `8081` | REST / JSON | H2 (`student_db`) | Student demographic data CRUD. |
+| **Course Enrolment Service** | `8082` | REST / JSON | H2 (`enrolment_db`) | Semester enrolment, capacity checks, and eligibility checks. |
+| **Library / Booking Service** | `8083` | SOAP / XML | H2 (`library_db`) | Book loans and room bookings (Legacy SOAP Endpoint). |
+| **Notification Service** | `8084` | AMQP / REST | *None* | Background asynchronous listener for system events. |
+| **Reporting / Analytics Service** | `8085` | REST / JSON | H2 (`analytics_db`) | CQRS aggregate read-model compiling course stats. |
+
+---
+
+## 4. System Architecture Topology
 
 ```
                                 +---------------------------+
@@ -96,41 +110,77 @@ The platform exposes five primary modules, each designed as a self-contained mic
 
 ---
 
-## 4. Technology Stack & Requirements Mapping
+## 5. Dependencies & Environment Setup Guide
 
-Every mandatory assessment requirement is mapped to our implementation:
-*   **R1: System Characterisation**: Explicitly documents and implements Access, Location, Concurrency, and Failure transparencies.
-*   **R2: Architectural Pattern Selection**: Implements a Multi-Tier Client-Server topology coupled with a CQRS read-model aggregator for reporting metrics.
-*   **R3: SOA Principles**: Encapsulates 5 autonomous modules with strictly isolated database engines and schemas (H2 database-per-service).
-*   **R4: Service Composition**: Integrates a hybrid orchestration flow (REST RPC checking student eligibility) and async choreography flow (RabbitMQ notification alerts).
-*   **R5: Multithreaded Server**: Employs custom `ExecutorService` thread pools and fine-grained `ReentrantLock` locks per course code, validated by automated concurrent testing.
-*   **R6: Distributed Messaging**: Establishes AMQP event routing via RabbitMQ Topic Exchange (`exchange.smartcampus`) using JSON serialization formats.
-*   **R7: REST API**: Standardized endpoints with correct verbs, JSON bodies, and status codes (`201 Created`, `200 OK`, `400 Bad Request`, `404 Not Found`).
-*   **R8: SOAP Service**: Provides XML contract schema integration mapping to endpoints that trigger dynamic WSDL generation and custom SOAP Fault structures.
-*   **R9: Failure Handling**: Handles network failure states with custom circuit breakers and graceful fallback routines inside `StudentClient.java`.
-*   **R10: Version Control & Build**: Packages modules under a single parent Maven artifact, deployed locally using single-command orchestration scripts.
+Before attempting to compile or run the platform, verify that your local development machine satisfies all the software dependencies below. Follow the step-by-step installation instructions if any component is missing.
+
+### 5.1 Git Bash (Required for Windows Users)
+Since Windows Command Prompt does not natively support Unix shell scripts (`.sh`), we use **Git Bash** to compile, orchestrate, and execute the backend services.
+
+*   **How to Check**: Press the `Windows Key`, type **"Git Bash"**, and see if the application appears. Alternatively, in your active terminal, run:
+    ```bash
+    git --version
+    ```
+    *Expected Output*: `git version 2.x.x.windows.1` (or similar).
+*   **How to Install (If Missing)**:
+    1. Download the **Git for Windows** installer from the [Official Git-SCM Download Page](https://git-scm.com/download/win).
+    2. Launch the installer executable (e.g., `Git-2.x.x-64-bit.exe`).
+    3. During the installation wizard:
+        * Ensure **"Git Bash"** is selected under the *Components* checklist.
+        * Keep the default configurations for the terminal emulator and line-ending conversions. (It is highly recommended to select *Checkout Windows-style, commit Unix-style line endings* to prevent CRLF file-lock errors on Windows).
+    4. Click **Install** to finish.
+    5. You can now right-click inside any folder in Windows File Explorer and select **"Open Git Bash here"** to open a terminal pre-navigated to that directory.
 
 ---
 
-## 5. Prerequisites & Local Installation
+### 5.2 Java Development Kit (JDK 21 - Required)
+The project utilizes Java 21 compilation targets. Running the modules on older environments (such as Java 8, 11, or 17) will cause immediate compilation failures or runtime `UnsupportedClassVersionError` crashes.
 
-Ensure your local development machine has these tools installed and configured:
+*   **How to Check**: Open your Git Bash terminal and run:
+    ```bash
+    java -version
+    ```
+    *Expected Output*: `java version "21.x.x"` or higher.
+*   **How to Install (If Missing or on an older version)**:
+    1. Download the **Eclipse Temurin JDK 21** installer from [Adoptium OpenJDK 21](https://adoptium.net/temurin/releases/?version=21).
+    2. Run the installer wizard on Windows.
+    3. **Crucial**: Ensure you check the boxes to enable:
+        * **Add to PATH**
+        * **Set JAVA_HOME variable**
+    4. Complete the installation, restart your Git Bash terminal, and run `java -version` again to confirm.
 
-### 1. Git Bash (Required for Windows Users)
-Since Windows Command Prompt does not natively support Unix shell scripts (`.sh`), Windows users must run our startup pipelines using **Git Bash**.
-*   Verify installation: `git --version`
-*   If missing, download from: [Git SCM Windows](https://git-scm.com/download/win)
+---
 
-### 2. JDK 21 (Required)
-The codebase uses Java 21 compilation targets. Standard older environments (Java 8, 11, or 17) will fail to run the modules.
-*   Verify installation: `java -version`
-*   If missing, download from: [Eclipse Temurin OpenJDK 21](https://adoptium.net/temurin/releases/?version=21)
+### 5.3 Docker Desktop (Required for RabbitMQ Broker)
+We use a Docker container to host our RabbitMQ message broker. You do not need to install RabbitMQ natively on your operating system, but Docker must be running to host the container.
 
-### 3. Docker Desktop (Required)
-Our asynchronous event broker relies on RabbitMQ hosted within a local Docker container.
-*   Verify installation: `docker compose version`
-*   If missing, download from: [Docker Desktop](https://www.docker.com/products/docker-desktop/)
-*   **Note**: Ensure Docker Desktop is open and that the engine status bar in the bottom-left corner is **green** (running) before launching the services.
+*   **How to Check**: Run these commands in your terminal:
+    ```bash
+    docker --version
+    docker compose version
+    ```
+    *Expected Output*: Both commands should return active version numbers.
+*   **How to Install (If Missing)**:
+    1. Download and install **Docker Desktop for Windows** from [Docker's Official Site](https://www.docker.com/products/docker-desktop/).
+    2. Complete the installer and restart your computer if prompted.
+    3. Launch **Docker Desktop** from your Start Menu.
+    4. Wait until the status icon in the bottom-left corner of the Docker Desktop dashboard UI turns solid **green** (indicating "Engine Running").
+
+---
+
+### 5.4 Apache Maven (Required for Compiling)
+The parent project orchestrates and packages all 5 microservice modules using Maven.
+
+*   **How to Check**: Run this command in your terminal:
+    ```bash
+    mvn -version
+    ```
+    *Expected Output*: Returns your Maven version and links it to your active JDK 21 environment.
+*   **How to Install (If Missing)**:
+    1. Download the binary zip archive from [Apache Maven](https://maven.apache.org/download.cgi).
+    2. Extract the folder to a permanent directory (e.g., `C:\Program Files\maven`).
+    3. Add the path to the `/bin` directory (e.g., `C:\Program Files\maven\bin`) to your Windows **System Environment Variables (PATH)**.
+    4. Restart your terminal to apply the changes and verify using `mvn -version`.
 
 ---
 
@@ -209,7 +259,7 @@ taskkill -F -IM java.exe
 docker compose down
 ```
 
-
+---
 
 ## 9. Project Team & Contributions
 
@@ -229,3 +279,5 @@ docker compose down
 *   **Reporting / Analytics Service**: Developed the CQRS read-model aggregator that compiles registration statistics asynchronously.
 *   **RabbitMQ Message Broker**: Configured the Topic Exchange, queues, routing keys, and JSON serialization format.
 *   **Postman Collection**: Created and exported the JSON test collection (`SmartCampus_Connect.postman_collection.json`).
+```
+```
