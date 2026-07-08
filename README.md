@@ -1,13 +1,10 @@
-Here is a complete, production-ready **`README.md`** file tailored specifically for your GitHub repository at `https://github.com/Tamak2803/SmartCampus.git`. 
-
-It is designed to present your architectural design, port allocation, local setup steps, and team contributions to your assessors in a clean, professional, and academically rigorous format.
-
-You can save this content directly as `README.md` in the root folder of your project.
 
 ---
 
 ```markdown
 # SmartCampus Connect
+
+https://youtu.be/z9me8u2aZok
 
 SmartCampus Connect is a decentralized, microservices-based backend platform designed to deliver core campus services to a university environment. The application brings together distributed system design methodologies introduced in Weeks 1 through 7: strict database-per-service isolation, synchronous RESTful orchestration, asynchronous AMQP choreography, multi-threaded concurrency locking, legacy SOAP interoperability, and circuit-breaker failure tolerance.
 
