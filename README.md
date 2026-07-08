@@ -1,5 +1,4 @@
 
----
 
 ```markdown
 # SmartCampus Connect
@@ -10,9 +9,60 @@ SmartCampus Connect is a decentralized, microservices-based backend platform des
 
 ---
 
-## 1. System Architecture
+## 1. Project Overview & Problem Statement
 
-The platform uses a hybrid architectural pattern combining **Synchronous REST-based Orchestration** (for transactional boundaries requiring real-time verification) and **Asynchronous AMQP-based Choreography** (for decoupled side-effects like background alerting and reporting stats).
+### What is SmartCampus Connect?
+In a modern university ecosystem, campus services such as student record registries, academic enrolments, library loans, alerting systems, and academic reporting dashboards are traditionally handled by isolated legacy platforms. When these systems are tightly coupled or forced to share a single database, the entire campus faces high latency, service propagation delays, and single points of failure (e.g., a crash in the library system bringing down student course registration).
+
+**SmartCampus Connect** addresses these issues by decoupling these operations into a distributed, service-oriented architecture (SOA). By isolating each business capability into an independent, containerized, and database-isolated microservice, the platform ensures:
+*   **High Scalability**: Heavily congested services (like Course Enrolment during registration week) can be scaled independently of stable services (like Student Profiles).
+*   **Fault Isolation**: If a legacy system (like the Library Service) goes offline, transactional registration gates continue to operate normally.
+*   **Data Integrity under Load**: The system handles concurrent transactional limits at the application tier to protect database resources.
+
+---
+
+## 2. Functional Modules & Service Capabilities
+
+The platform exposes five primary modules, each designed as a self-contained microservice with strict boundaries:
+
+### 2.1 Student Profile Service (Port 8081)
+*   **Purpose**: Functions as the single source of truth (system of record) for student demographic and academic profiles.
+*   **Key Functions**:
+    *   Exposes a standard RESTful JSON interface.
+    *   Provides full Create, Read, Update, and Delete (CRUD) operations mapped to standard HTTP verbs (`POST`, `GET`, `PUT`, `DELETE`).
+    *   Maintains its own isolated database schema (`student_db`), ensuring student records cannot be modified directly by external database writes.
+
+### 2.2 Course Enrolment Service (Port 8082)
+*   **Purpose**: Manages semester course registrations and enforces strict seat limits under heavy concurrent workloads.
+*   **Key Functions**:
+    *   **Synchronous Orchestration**: Before executing any registration, it performs a real-time REST client lookup against port `8081` to verify the student profile exists and is eligible.
+    *   **Concurrency Safeguards**: Implements application-tier re-entrant locks (`ReentrantLock`) mapped dynamically per course code. This serializes registration threads attempting to claim the same course code, preventing race conditions or double-booking.
+    *   **Provisional Fallback**: Employs network timeout mapping. If the Student Profile Service is down, the system triggers a circuit-breaker fallback, gracefully approving the registration "provisionally" rather than failing the transaction.
+    *   **Event Generation**: Upon a committed write to `enrolment_db`, it serializes and publishes a JSON event payload to RabbitMQ.
+
+### 2.3 Notification Service (Port 8084)
+*   **Purpose**: An asynchronous messaging consumer that alerts students of campus activities.
+*   **Key Functions**:
+    *   **Asynchronous Processing**: Uses background `@RabbitListener` threads to listen to registration events on `queue.notifications`.
+    *   **Loose Coupling**: Completely decoupled from writing transactions. If the notification consumer is offline during a registration, RabbitMQ queues the messages persistently and delivers them automatically once the service comes back online.
+    *   **Dashboard REST Bridge**: Stores the last 5 alerts in a thread-safe in-memory collection and exposes them over a CORS-enabled REST API for the live dashboard.
+
+### 2.4 Library / Booking Service (Port 8083)
+*   **Purpose**: Simulates integration with a legacy campus application, processing book loans and room bookings.
+*   **Key Functions**:
+    *   **SOAP/WSDL Compatibility**: Rather than using modern JSON, this module exposes legacy XML interfaces mapped to standard contracts defined in `library.xsd`.
+    *   **Dynamic Contract Publishing**: Publishes its compiled bindings and WSDL documentation dynamically at `/ws/library.wsdl`.
+    *   **Structured Exception Faults**: Validates incoming XML payloads and intercepts invalid inputs to generate structured `<soapenv:Fault>` exceptions returned under an HTTP 500 status code.
+
+### 2.5 Reporting / Analytics Service (Port 8085)
+*   **Purpose**: Compiles aggregate real-time statistical reports (e.g., student enrolment metrics per academic course) for administrative consoles.
+*   **Key Functions**:
+    *   **CQRS Pattern**: To prevent slow, cross-database SQL join queries that degrade database read performance, this service subscribes independently to the registration events.
+    *   **Data Aggregation**: Parses JSON events from RabbitMQ and increments registration counters in its own isolated database (`analytics_db`), enabling immediate, high-performance report delivery via a REST endpoint.
+
+---
+
+## 3. System Architecture Topology
 
 ```
                                 +---------------------------+
@@ -46,39 +96,25 @@ The platform uses a hybrid architectural pattern combining **Synchronous REST-ba
 
 ---
 
-## 2. Port Allocation & Endpoint Registry
+## 4. Technology Stack & Requirements Mapping
 
-Each service is compiled independently, runs in an isolated JVM, and maintains its own in-memory database to satisfy the **Database-per-Service (R3)** architectural constraint.
-
-| Service Name | Port | Protocols | Database | Core Responsibilities |
-| :--- | :--- | :--- | :--- | :--- |
-| **Student Profile Service** | `8081` | REST / JSON | H2 (`student_db`) | Student demographic data CRUD. |
-| **Course Enrolment Service** | `8082` | REST / JSON | H2 (`enrolment_db`) | Semester enrolment, capacity checks, and eligibility checks. |
-| **Library / Booking Service** | `8083` | SOAP / XML | H2 (`library_db`) | Book loans and room bookings (Legacy SOAP Endpoint). |
-| **Notification Service** | `8084` | AMQP / REST | *None* | Background asynchronous listener for system events. |
-| **Reporting / Analytics Service** | `8085` | REST / JSON | H2 (`analytics_db`) | CQRS aggregate read-model compiling course stats. |
-
----
-
-## 3. Technology Stack & Mandatory Requirements
-
-Every requirement specified in the grading rubric is implemented across our codebase:
-*   **R1: System Characterisation**: Explains location, access, concurrency, and failure transparencies in the final technical report.
-*   **R2: Architectural Pattern Selection**: Implements a Multi-Tier Client-Server structure combined with CQRS read-side data replication.
-*   **R3: SOA Principles**: Encapsulates 5 independently-deployable modules with database-per-service data isolation.
-*   **R4: Service Composition**: Implements synchronous REST orchestration (Enrolment checking Student Profile) paired with asynchronous choreography (RabbitMQ events).
-*   **R5: Multithreaded Server**: Implements a custom thread pool (`ExecutorService`) and `ReentrantLock` boundaries per course key to prevent over-enrolment race conditions.
-*   **R6: Distributed Messaging**: Implements asynchronous routing over RabbitMQ using a Topic Exchange (`exchange.smartcampus`).
-*   **R7: REST API**: Exposes JSON REST APIs with correct HTTP verbs and semantic status codes (`201`, `200`, `400`, `404`).
-*   **R8: SOAP Service**: Exposes a JAX-WS compliant SOAP endpoint generating a WSDL contract and handling structured SOAP Faults.
-*   **R9: Failure Handling**: Integrates client-side timeouts and circuit-breaker fallbacks allowing graceful degradation.
-*   **R10: Version Control & Build**: Executed via a single parent Maven compile cycle and launched with a single shell script.
+Every mandatory assessment requirement is mapped to our implementation:
+*   **R1: System Characterisation**: Explicitly documents and implements Access, Location, Concurrency, and Failure transparencies.
+*   **R2: Architectural Pattern Selection**: Implements a Multi-Tier Client-Server topology coupled with a CQRS read-model aggregator for reporting metrics.
+*   **R3: SOA Principles**: Encapsulates 5 autonomous modules with strictly isolated database engines and schemas (H2 database-per-service).
+*   **R4: Service Composition**: Integrates a hybrid orchestration flow (REST RPC checking student eligibility) and async choreography flow (RabbitMQ notification alerts).
+*   **R5: Multithreaded Server**: Employs custom `ExecutorService` thread pools and fine-grained `ReentrantLock` locks per course code, validated by automated concurrent testing.
+*   **R6: Distributed Messaging**: Establishes AMQP event routing via RabbitMQ Topic Exchange (`exchange.smartcampus`) using JSON serialization formats.
+*   **R7: REST API**: Standardized endpoints with correct verbs, JSON bodies, and status codes (`201 Created`, `200 OK`, `400 Bad Request`, `404 Not Found`).
+*   **R8: SOAP Service**: Provides XML contract schema integration mapping to endpoints that trigger dynamic WSDL generation and custom SOAP Fault structures.
+*   **R9: Failure Handling**: Handles network failure states with custom circuit breakers and graceful fallback routines inside `StudentClient.java`.
+*   **R10: Version Control & Build**: Packages modules under a single parent Maven artifact, deployed locally using single-command orchestration scripts.
 
 ---
 
-## 4. Prerequisites & Local Installation
+## 5. Prerequisites & Local Installation
 
-Before attempting to boot the platform locally, ensure that your development machine has the following tools installed and configured:
+Ensure your local development machine has these tools installed and configured:
 
 ### 1. Git Bash (Required for Windows Users)
 Since Windows Command Prompt does not natively support Unix shell scripts (`.sh`), Windows users must run our startup pipelines using **Git Bash**.
@@ -98,7 +134,7 @@ Our asynchronous event broker relies on RabbitMQ hosted within a local Docker co
 
 ---
 
-## 5. Running the Project Locally
+## 6. Running the Project Locally
 
 Follow these steps to build, package, and launch the entire multi-service platform:
 
@@ -119,7 +155,7 @@ chmod +x load-test.sh
 ```bash
 ./run-stack.sh
 ```
-*This command runs a clean Maven build, packages the binaries into executable JARs, spins up the RabbitMQ Docker container, pauses for 10 seconds to allow the broker to accept sockets, and boots all 5 backend engines as background processes.*
+*This command runs a clean Maven build, packages the binaries into executable JARs, spins up the RabbitMQ Docker container, pauses for 10 seconds to allow the broker to initialize, and boots all 5 backend engines as background processes.*
 
 ### Step 4: Verify Background Processes are Active
 Check your system thread pool using the native Windows utility via Git Bash:
@@ -130,7 +166,7 @@ powershell -Command "Get-Process -Name java"
 
 ---
 
-## 6. How to Verify & Demo
+## 7. How to Verify & Demo
 
 Once your local deployment is online, you can verify every service using our unified, single-page browser console:
 
@@ -159,7 +195,7 @@ We have provided an exported Postman test suite in the root directory: **`SmartC
 
 ---
 
-## 7. Clean Shutdown
+## 8. Clean Shutdown
 
 Because our services run in the background, closing your terminal window will **not** stop them. If you attempt to recompile or run the project while they are still active, you will get port bind or file lock compilation errors.
 
@@ -173,9 +209,9 @@ taskkill -F -IM java.exe
 docker compose down
 ```
 
----
 
-## 8. Project Team & Contributions
+
+## 9. Project Team & Contributions
 
 ### 1. Darmendren A/L Thava Singh (B032410539)
 *   **Student Profile Service**: Developed the REST CRUD API for student demographic records.
